@@ -70,7 +70,7 @@
     <p class="text-frost/80 text-sm tracking-wide">26 Dec 2026 – 2 Jan 2027 · 8 people</p>
     <h1 class="font-display text-4xl sm:text-6xl font-bold mt-2 leading-tight">Trysil Ski Trip ⛷️</h1>
 
-    <div class="mt-8 grid gap-5 lg:grid-cols-[1.3fr_1fr]">
+    <div class="mt-8 grid gap-5 lg:grid-cols-3">
       <!-- countdown -->
       <div class="card p-6">
         <p class="text-frost/70 text-sm">Ferry leaves Hirtshals in</p>
@@ -93,6 +93,20 @@
           <span class="font-display text-5xl font-bold">–°</span>
         </div>
         <div id="wxDays" class="mt-4 grid grid-cols-4 gap-2 text-center text-sm"></div>
+      </div>
+
+      <!-- webcam -->
+      <div class="card overflow-hidden flex flex-col">
+        <div class="flex items-center justify-between px-5 pt-5 pb-3">
+          <p class="text-frost/70 text-sm">Live from Trysil</p>
+          <span id="camState" class="inline-flex items-center gap-1.5 text-xs text-frost/50">
+            <span class="w-2 h-2 rounded-full bg-berry"></span>loading…
+          </span>
+        </div>
+        <a id="camLink" href="#" target="_blank" rel="noopener" class="block relative bg-night mt-auto">
+          <img id="camImg" alt="Trysil ski area webcam" class="w-full aspect-video object-cover" referrerpolicy="no-referrer">
+          <span class="absolute bottom-3 right-3 bg-night/70 text-frost text-xs px-2 py-1 rounded-md">All cameras ↗</span>
+        </a>
       </div>
     </div>
   </div>
@@ -372,6 +386,30 @@
     try { localStorage.removeItem(PACK_KEY); } catch (e) {}
     buildPacking();
   });
+
+  /* ---- Trysil webcam (single-frame image, refreshed on a timer) ---- */
+  var CAM_URL = 'https://www.skistar.com/LpvImageService/WebcamImage/73895306/1024';
+  (function cam() {
+    var img = $('#camImg'), state = $('#camState'), link = $('#camLink');
+    if (!img) return;
+    link.href = 'https://www.skistar.com/da/skisteder/trysil/vinter-i-trysil/vajr-og-pister/webcams-trysil/';
+    function refresh() {
+      var next = new Image();
+      next.referrerPolicy = 'no-referrer';
+      next.onload = function () {
+        img.src = next.src;
+        state.innerHTML = '<span class="w-2 h-2 rounded-full bg-pine"></span>updated ' +
+          new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      };
+      next.onerror = function () {
+        state.innerHTML = '<span class="w-2 h-2 rounded-full bg-berry"></span>camera offline';
+      };
+      next.src = CAM_URL + '?t=' + Date.now();   // cache-bust so each load is fresh
+    }
+    refresh();
+    setInterval(function () { if (!document.hidden) refresh(); }, 60000); // every minute
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });
+  })();
 
   /* ================= SUPABASE ================= */
   var db = null, live = false;
